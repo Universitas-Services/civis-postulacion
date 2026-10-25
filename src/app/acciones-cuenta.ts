@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import {
   codigoVerificacionSchema,
   correoPendienteSchema,
@@ -81,7 +81,7 @@ export async function iniciarSesion(
     } | null;
     if (datos?.codigo === "CORREO_SIN_VERIFICAR") {
       await recordarCorreo(analisis.data.email);
-      redirect("/verificar");
+      redirect("/verificar", RedirectType.replace);
     }
     return { error: datos?.message ?? "Acceso denegado." };
   }
@@ -123,7 +123,8 @@ export async function iniciarSesion(
     refreshCookie,
     accessExpiresAt: accessExpiresAtDesde(datos.expiresIn),
   });
-  redirect("/postulacion");
+  // `replace`: el ingreso no queda en el historial; «atrás» no vuelve al login.
+  redirect("/postulacion", RedirectType.replace);
 }
 
 export async function terminarSesion(): Promise<void> {
@@ -137,7 +138,7 @@ export async function terminarSesion(): Promise<void> {
     }).catch(() => undefined);
   }
   await cerrarSesion();
-  redirect("/login");
+  redirect("/login", RedirectType.replace);
 }
 
 export async function registrarCuenta(
@@ -168,7 +169,7 @@ export async function registrarCuenta(
     return { error: await mensajeDe(respuesta, "No se pudo crear la cuenta."), valores };
   }
   await recordarCorreo(analisis.data.email);
-  redirect("/verificar");
+  redirect("/verificar", RedirectType.replace);
 }
 
 export async function verificarCuenta(
@@ -195,7 +196,7 @@ export async function verificarCuenta(
     return { campos: { codigo: await mensajeDe(respuesta, "El código no es válido.") } };
   }
   await olvidarCorreo();
-  redirect("/login?verificada=1");
+  redirect("/login?verificada=1", RedirectType.replace);
 }
 
 export async function reenviarCodigo(): Promise<EstadoFormulario> {
@@ -231,7 +232,7 @@ export async function pedirCodigoRecuperacion(
     return { error: await mensajeDe(respuesta, "No se pudo enviar el código."), valores };
   }
   await recordarCorreo(correo.data);
-  redirect("/recuperar/codigo");
+  redirect("/recuperar/codigo", RedirectType.replace);
 }
 
 /** Paso 2: código + contraseña nueva. La API cierra todas las sesiones de la cuenta. */
@@ -257,7 +258,7 @@ export async function restablecerContrasena(
     return { campos: { codigo: await mensajeDe(respuesta, "El código no es válido.") } };
   }
   await olvidarCorreo();
-  redirect("/login?restablecida=1");
+  redirect("/login?restablecida=1", RedirectType.replace);
 }
 
 export async function reenviarCodigoRecuperacion(): Promise<EstadoFormulario> {

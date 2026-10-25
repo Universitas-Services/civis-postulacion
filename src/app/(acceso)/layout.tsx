@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { ToastProvider } from "@/components/toast-provider";
+import { GuardiaHistorial } from "@/components/guardia-historial";
 import { RedNodos } from "@/components/marca/red-nodos";
 
 const PASOS = [
@@ -28,8 +29,11 @@ const PASOS = [
 export default function LayoutAcceso({ children }: { readonly children: React.ReactNode }) {
   return (
     <ToastProvider>
-      <div className="grid min-h-dvh bg-toga-50 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-        <aside className="relative hidden overflow-hidden bg-toga-900 text-white lg:flex lg:flex-col lg:justify-between lg:px-12 lg:py-10 xl:px-16">
+      <GuardiaHistorial espera="sin-sesion" />
+      {/* Escritorio: ocupa exactamente la ventana, sin scroll de página. Si un
+          formulario largo no cabe, solo se desplaza su columna. */}
+      <div className="grid min-h-dvh bg-toga-50 lg:h-dvh lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:overflow-hidden">
+        <aside className="relative hidden overflow-hidden bg-toga-900 text-white lg:flex lg:flex-col lg:justify-between lg:px-12 lg:py-[clamp(1.25rem,4.5vh,2.5rem)] xl:px-16">
           <RedNodos className="absolute inset-0 h-full w-full" />
           <div
             aria-hidden="true"
@@ -41,20 +45,23 @@ export default function LayoutAcceso({ children }: { readonly children: React.Re
             alt="CIVIS — Consejo Independiente de Verificación de Credenciales"
             width={962}
             height={333}
-            className="relative h-16 w-auto self-start"
+            className="relative h-[clamp(2.75rem,8vh,4rem)] w-auto self-start"
             priority
           />
 
           <div className="relative max-w-md">
-            <p className="font-institucional text-[2rem] leading-[1.2] text-balance">
+            <p className="font-institucional text-[clamp(1.5rem,3.8vh,2rem)] leading-[1.2] text-balance">
               Credenciales que inspiran confianza.
             </p>
-            <span aria-hidden="true" className="mt-5 block h-0.5 w-14 bg-balanza-500" />
-            <p className="mt-5 text-base leading-relaxed text-toga-200">
+            <span
+              aria-hidden="true"
+              className="mt-[clamp(0.75rem,2.5vh,1.25rem)] block h-0.5 w-14 bg-balanza-500"
+            />
+            <p className="mt-[clamp(0.75rem,2.5vh,1.25rem)] text-base leading-relaxed text-toga-200">
               Postulación a magistrado del Tribunal Supremo de Justicia.
             </p>
 
-            <ol className="mt-10 space-y-6">
+            <ol className="mt-[clamp(1rem,5vh,2.5rem)] space-y-[clamp(0.625rem,2.8vh,1.5rem)]">
               {PASOS.map((p, i) => (
                 <li key={p.titulo} className="flex gap-4">
                   <span
@@ -65,20 +72,23 @@ export default function LayoutAcceso({ children }: { readonly children: React.Re
                   </span>
                   <div>
                     <p className="font-semibold">{p.titulo}</p>
-                    <p className="mt-1 text-sm leading-relaxed text-toga-200">{p.detalle}</p>
+                    {/* En pantallas muy bajas queda solo el título del paso. */}
+                    <p className="mt-1 text-sm leading-relaxed text-toga-200 [@media(max-height:600px)]:hidden">
+                      {p.detalle}
+                    </p>
                   </div>
                 </li>
               ))}
             </ol>
           </div>
 
-          <p className="relative max-w-md text-xs leading-relaxed text-toga-300">
+          <p className="relative max-w-md text-xs leading-relaxed text-toga-300 [@media(max-height:520px)]:hidden">
             Sus datos de contacto y sus documentos no se publican. Solo los ve el equipo que
             verifica las credenciales.
           </p>
         </aside>
 
-        <div className="flex flex-col">
+        <div className="flex flex-col lg:min-h-0 lg:overflow-y-auto">
           <header className="border-b border-toga-200 bg-white px-4 py-3 lg:hidden">
             <Image
               src="/brand/civis-horiz-color.png"
@@ -91,7 +101,7 @@ export default function LayoutAcceso({ children }: { readonly children: React.Re
           </header>
           <main
             id="contenido"
-            className="flex flex-1 items-start justify-center px-4 py-8 sm:px-6 lg:items-center lg:py-12"
+            className="flex flex-1 items-start justify-center px-4 py-8 sm:px-6 lg:items-center lg:py-[clamp(1rem,4vh,3rem)]"
           >
             <div className="w-full max-w-md">{children}</div>
           </main>

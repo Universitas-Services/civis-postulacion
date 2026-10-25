@@ -10,7 +10,18 @@ import { COOKIE_SESION } from "@/lib/config";
  * hace la API en cada llamada, y cada página la comprueba con `exigirRol`.
  */
 const RUTAS_PUBLICAS = ["/login", "/registro", "/verificar", "/recuperar", "/api/sesion"];
-const RUTAS_DE_ACCESO = ["/login", "/registro"];
+/** Con sesión abierta no tienen sentido: se manda al postulante a su postulación. */
+const RUTAS_DE_ACCESO = ["/login", "/registro", "/verificar", "/recuperar"];
+
+/**
+ * Las pantallas no se guardan en la caché del navegador: al pulsar «atrás»
+ * se vuelven a pedir y este proxy decide (login con sesión → postulación;
+ * postulación sin sesión → login).
+ */
+function sinCache(respuesta: NextResponse): NextResponse {
+  respuesta.headers.set("Cache-Control", "no-store, max-age=0");
+  return respuesta;
+}
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -21,20 +32,20 @@ export function proxy(request: NextRequest) {
 
   if (RUTAS_PUBLICAS.some((r) => pathname.startsWith(r))) {
     if (conSesion && RUTAS_DE_ACCESO.some((r) => pathname.startsWith(r))) {
-      return NextResponse.redirect(new URL("/postulacion", base));
+      return sinCache(NextResponse.redirect(new URL("/postulacion", base)));
     }
-    return NextResponse.next();
+    return sinCache(NextResponse.next());
   }
 
   if (!conSesion) {
     const destino = new URL("/login", base);
     if (pathname !== "/") destino.searchParams.set("volver", pathname);
-    return NextResponse.redirect(destino);
+    return sinCache(NextResponse.redirect(destino));
   }
 
   const cabeceras = new Headers(request.headers);
   cabeceras.set("x-pathname", pathname);
-  return NextResponse.next({ request: { headers: cabeceras } });
+  return sinCache(NextResponse.next({ request: { headers: cabeceras } }));
 }
 
 export const config = {

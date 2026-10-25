@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { ToastProvider } from "@/components/toast-provider";
+import { GuardiaHistorial } from "@/components/guardia-historial";
 import { terminarSesion } from "@/app/acciones-cuenta";
 import { usuarioActual } from "@/lib/sesion";
 
@@ -20,6 +21,7 @@ export default async function LayoutCuenta({ children }: { readonly children: Re
 
   return (
     <ToastProvider>
+      <GuardiaHistorial espera="con-sesion" />
       <div className="min-h-dvh bg-toga-50">
         <header className="bg-toga-900 text-white">
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
