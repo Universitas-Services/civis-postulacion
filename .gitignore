@@ -1,0 +1,49 @@
+# ── Dependencias y compilación ──────────────────────────────────────────
+node_modules/
+coverage/
+*.tsbuildinfo
+
+# ── Entorno ─────────────────────────────────────────────────────────────
+# Se ignora TODO .env* y se permite sólo el ejemplo. La lógica va en este
+# orden a propósito: enumerar los archivos a ignorar deja fuera los que
+# nadie previó (.env.production, .env.staging, .env.local.bak…), y basta
+# uno para filtrar credenciales.
+.env*
+!.env.example
+
+# ── Sistema operativo y editores ────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# ── Registros ───────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# ── Herramientas de asistentes instaladas localmente ────────────────────
+# No son código del proyecto y pesan decenas de MB.
+.cursor/
+.agents/
+.codex/
+skills-lock.json
+
+# ── Específico de Next.js ───────────────────────────────────────────────
+.next/
+out/
+next-env.d.ts
+
+# ── Playwright ──────────────────────────────────────────────────────────
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+
+# ── Skills de diseño de terceros (se reinstalan; ver CLAUDE.md) ─────────
+.claude/skills/impeccable/
+.claude/skills/design-taste-frontend/
+.claude/skills/emil-design-eng/
+.claude/agents/
+.impeccable/

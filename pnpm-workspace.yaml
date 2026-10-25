@@ -1,0 +1,7 @@
+# Este proyecto NO es un monorepo: no hay clave `packages`.
+# pnpm 12 movió aquí los ajustes que antes vivían en package.json#pnpm.
+allowBuilds:
+  esbuild: true
+  sharp: true
+  "unrs-resolver": true
+  "@tailwindcss/oxide": true

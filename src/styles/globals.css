@@ -1,0 +1,319 @@
+@import "tailwindcss";
+
+/**
+ * Paleta institucional CIVIS.
+ *
+ * Anclas de marca (guía de color):
+ *   Vino institucional  #7A1E2D
+ *   Azul profundo       #0F2A44
+ *   Gris principal      #64748B
+ *   Gris claro          #CBD5E1
+ *   Blanco              #F8FAFC
+ *   Negro               #111827
+ *
+ * Los nombres de token (`toga`, `balanza`) se conservan para no reescribir
+ * toda la UI: cambian los valores, no las clases. `toga` ancla el azul/gris
+ * institucional; `balanza` pasa del oro viejo al vino como acento.
+ *
+ * Semánticos: verde esmeralda para lo validado; gris piedra para lo objetado
+ * (una objeción es revisión, no alarma).
+ */
+@theme {
+  --color-toga-50: #f8fafc;
+  --color-toga-100: #eef2f6;
+  --color-toga-200: #e2e8f0;
+  --color-toga-300: #cbd5e1;
+  --color-toga-400: #94a3b8;
+  --color-toga-500: #64748b;
+  --color-toga-600: #4a5d73;
+  --color-toga-700: #334155;
+  --color-toga-800: #1a3a55;
+  --color-toga-900: #0f2a44;
+
+  --color-balanza-50: #fdf2f4;
+  --color-balanza-100: #f9e4e8;
+  --color-balanza-200: #e8b4bc;
+  --color-balanza-500: #9a2a3a;
+  --color-balanza-600: #7a1e2d;
+  --color-balanza-700: #5c1622;
+
+  --color-validado-50: #ecfdf5;
+  --color-validado-700: #047857;
+
+  --color-objetado-100: #f1f5f9;
+  --color-objetado-600: #64748b;
+
+  /* IBM Plex, auto-alojada por next/font (ver src/lib/fuentes.ts). */
+  --font-institucional: var(--fuente-serif), Georgia, "Times New Roman", serif;
+  --font-sistema: var(--fuente-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--fuente-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Alias para las utilidades font-sans / font-serif / font-mono. */
+  --font-sans: var(--fuente-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: var(--fuente-serif), Georgia, "Times New Roman", serif;
+}
+
+:root {
+  color-scheme: light;
+  --duracion-ui: 150ms;
+  --color-gris-pizarra: #111827;
+  --color-oro-viejo: #7a1e2d; /* legacy: ahora vino institucional */
+  --color-vino: #7a1e2d;
+  --color-azul-profundo: #0f2a44;
+  --color-fondo-general: #f8fafc;
+  --color-lienzo: #ffffff;
+  --color-borde-lienzo: #cbd5e1;
+  --color-validado-texto: #047857;
+  --color-validado-fondo: #ecfdf5;
+  --color-objetado-texto: #64748b;
+  --color-objetado-fondo: #f1f5f9;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-fondo-general);
+  color: var(--color-gris-pizarra);
+  font-family: var(--font-sistema);
+  /* 16px es el suelo, también en móvil. Por debajo de 16px la legibilidad
+     cae para personas con baja visión o dislexia (guía del GOV.UK Design
+     System, siguiendo a la British Dyslexia Association). */
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Los títulos llevan la serif institucional: aporta el peso de documento
+   formal sin recurrir a ornamento. */
+h1,
+h2,
+h3 {
+  font-family: var(--font-institucional);
+  letter-spacing: -0.011em;
+  text-wrap: balance;
+}
+
+/**
+ * Medida de línea.
+ *
+ * El USWDS sitúa la lectura cómoda entre 45 y 90 caracteres, con 66 como
+ * óptimo. Sin este tope, en pantallas anchas los párrafos se estiran y el ojo
+ * pierde el renglón al volver.
+ */
+.prosa {
+  max-width: 66ch;
+  text-wrap: pretty;
+}
+
+/* Las cifras de puntaje se comparan en vertical: deben alinearse. */
+.cifra {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Códigos de seguimiento y huellas SHA: deben poder transcribirse sin
+   confundir 0 con O ni 1 con l. */
+code,
+.codigo {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+}
+
+/* Foco siempre visible: requisito de accesibilidad por teclado (WCAG 2.4.7). */
+:focus-visible {
+  outline: 3px solid var(--color-vino);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@keyframes entrada-ui {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Panel lateral: entra desde el borde y se recoge al cerrar. */
+@keyframes hoja-entrar {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes hoja-salir {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes hoja-entrar-izq {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes hoja-salir-izq {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes velo-entrar {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes velo-salir {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.hoja-panel[data-state="open"] {
+  animation: hoja-entrar 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hoja-panel[data-state="closed"] {
+  animation: hoja-salir 280ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+.hoja-panel-izq[data-state="open"] {
+  animation: hoja-entrar-izq 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hoja-panel-izq[data-state="closed"] {
+  animation: hoja-salir-izq 280ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+.hoja-velo[data-state="open"] {
+  animation: velo-entrar 280ms ease-out;
+}
+
+.hoja-velo[data-state="closed"] {
+  animation: velo-salir 220ms ease-in;
+}
+
+/* Errores de validación de campo: rojo claro, distinto del vino de marca. */
+.mensaje-error-campo {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #dc2626;
+}
+
+.campo-con-error {
+  border-color: #dc2626 !important;
+  background-color: #fef2f2;
+  box-shadow: 0 0 0 1px #dc2626;
+}
+
+/* Respeta la preferencia del sistema de reducir movimiento. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Menú lateral: scroll interno sin barra visible. */
+.barra-lateral-nav {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.barra-lateral-nav::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Enlace de salto para lectores de pantalla y navegación por teclado. */
+.salto-contenido {
+  position: absolute;
+  left: -9999px;
+  z-index: 999;
+}
+.salto-contenido:focus {
+  left: 1rem;
+  top: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-toga-900);
+  color: white;
+  border-radius: 0.375rem;
+}
+
+/* ── Portal del postulante ─────────────────────────────────────────────── */
+
+:root {
+  /* Ease-out fuerte para respuestas de la interfaz (entra rápido, asienta suave). */
+  --ease-salida: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+::selection {
+  background: var(--color-balanza-100);
+  color: var(--color-toga-900);
+}
+
+input,
+textarea {
+  caret-color: var(--color-balanza-600);
+}
+
+/* Botones que responden al pulsar: escala breve, nunca en `all`. */
+.pulsable {
+  transition:
+    transform 120ms var(--ease-salida),
+    background-color 150ms var(--ease-salida),
+    border-color 150ms var(--ease-salida);
+}
+.pulsable:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Único momento animado: el aviso que cambia el estado de la postulación. */
+@keyframes aparecer-aviso {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+.aparecer-aviso {
+  animation: aparecer-aviso 220ms var(--ease-salida);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulsable,
+  .aparecer-aviso {
+    transition: none;
+    animation: none;
+  }
+}

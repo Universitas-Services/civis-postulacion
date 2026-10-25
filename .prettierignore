@@ -1,0 +1,11 @@
+node_modules
+.next
+out
+coverage
+pnpm-lock.yaml
+public
+*.md
+.cursor
+.agents
+skills-lock.json
+.claude
