@@ -13,6 +13,8 @@ import { correoPendiente, olvidarCorreo, recordarCorreo } from "@/lib/correo-pen
 import { cabecerasAuthCookie, extraerRefreshCookie } from "@/lib/auth-refresh";
 import { accessExpiresAtDesde } from "@/lib/ttl-access";
 import { cerrarSesion, guardarSesion, leerSesion } from "@/lib/sesion";
+import { cabecerasCliente } from "@/lib/cliente";
+import { ErrorApi, llamarApiAccion, NoAutorizado } from "@/lib/api";
 
 export interface EstadoFormulario {
   readonly error?: string;
@@ -35,7 +37,11 @@ function camposDe(issues: readonly { path: PropertyKey[]; message: string }[]) {
 async function llamarPublica(ruta: string, body: unknown): Promise<Response | null> {
   return fetch(`${API_INTERNA}${ruta}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    headers: {
+      ...(await cabecerasCliente()),
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
     body: JSON.stringify(body),
     cache: "no-store",
   }).catch(() => null);
@@ -48,6 +54,44 @@ async function mensajeDe(respuesta: Response, porDefecto: string): Promise<strin
 
 const SIN_RED = "No se pudo contactar con el servidor. Intente de nuevo en unos minutos.";
 
+/** El widget de Turnstile deja su token en este campo del formulario. */
+function tokenCaptcha(formData: FormData): string | undefined {
+  const token = formData.get("cf-turnstile-response");
+  return typeof token === "string" && token ? token : undefined;
+}
+
+/**
+ * Acepta las versiones nuevas de los términos o la política (una constancia
+ * por documento) y vuelve a la postulación.
+ */
+export async function aceptarDocumentos(
+  _previo: EstadoFormulario,
+  formData: FormData,
+): Promise<EstadoFormulario> {
+  const ids = {
+    terminosId: String(formData.get("terminosId") ?? "") || undefined,
+    privacidadId: String(formData.get("privacidadId") ?? "") || undefined,
+  };
+  const campos: Record<string, string> = {};
+  if (ids.terminosId && formData.get("aceptaTerminos") !== "on") {
+    campos.aceptaTerminos = "Debe aceptar los Términos y Condiciones";
+  }
+  if (ids.privacidadId && formData.get("aceptaPrivacidad") !== "on") {
+    campos.aceptaPrivacidad = "Debe aceptar la Política de Privacidad";
+  }
+  if (Object.keys(campos).length > 0) return { campos };
+
+  try {
+    await llamarApiAccion("/applicant/legal/aceptar", { method: "POST", body: ids });
+  } catch (error) {
+    if (error instanceof NoAutorizado) redirect("/login", RedirectType.replace);
+    return {
+      error: error instanceof ErrorApi ? error.message : "No se pudo registrar la aceptación.",
+    };
+  }
+  redirect("/postulacion", RedirectType.replace);
+}
+
 export async function iniciarSesion(
   _previo: EstadoFormulario,
   formData: FormData,
@@ -55,18 +99,18 @@ export async function iniciarSesion(
   const analisis = loginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
+    captchaToken: tokenCaptcha(formData),
   });
   const valores = { email: String(formData.get("email") ?? "") };
   if (!analisis.success) return { campos: camposDe(analisis.error.issues), valores };
 
-  const respuesta = await fetch(`${API_INTERNA}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify(analisis.data),
-    cache: "no-store",
-  }).catch(() => null);
+  // Login propio del portal: exige captcha y sólo admite cuentas de postulante.
+  const respuesta = await llamarPublica("/auth/login-postulante", analisis.data);
 
   if (!respuesta) return { error: SIN_RED, valores };
+  if (respuesta.status === 400) {
+    return { error: await mensajeDe(respuesta, "Confirme que no es un robot."), valores };
+  }
   if (respuesta.status === 429) {
     return {
       error: "Demasiados intentos. Espere unos minutos antes de volver a probar.",
@@ -152,11 +196,18 @@ export async function registrarCuenta(
     password: formData.get("password"),
     confirmPassword: formData.get("confirmPassword"),
     website: formData.get("website") ?? "",
+    aceptaTerminos: formData.get("aceptaTerminos") === "on",
+    aceptaPrivacidad: formData.get("aceptaPrivacidad") === "on",
+    terminosId: formData.get("terminosId"),
+    privacidadId: formData.get("privacidadId"),
+    captchaToken: tokenCaptcha(formData),
   });
   const valores = {
     firstName: String(formData.get("firstName") ?? ""),
     lastName: String(formData.get("lastName") ?? ""),
     email: String(formData.get("email") ?? ""),
+    aceptaTerminos: formData.get("aceptaTerminos") === "on" ? "on" : "",
+    aceptaPrivacidad: formData.get("aceptaPrivacidad") === "on" ? "on" : "",
   };
   if (!analisis.success) return { campos: camposDe(analisis.error.issues), valores };
 

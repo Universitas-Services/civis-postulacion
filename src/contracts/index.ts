@@ -45,6 +45,8 @@ const nombrePersonaSchema = z
 export const loginSchema = z.object({
   email: correoSchema,
   password: z.string().min(1, "La contraseña es obligatoria"),
+  /** Token de Turnstile. La API lo exige si el captcha está activado. */
+  captchaToken: z.string().max(4096).optional(),
 });
 
 /** Espejo de civis-api `registroCuentaSchema`. */
@@ -56,6 +58,12 @@ export const registroCuentaSchema = z
     password: contrasenaSchema,
     confirmPassword: z.string().min(1, "Confirme la contraseña"),
     website: z.string().max(0).optional(),
+    /** Dos aceptaciones separadas y obligatorias, de las versiones que leyó. */
+    aceptaTerminos: z.literal(true, { error: "Debe aceptar los Términos y Condiciones" }),
+    aceptaPrivacidad: z.literal(true, { error: "Debe aceptar la Política de Privacidad" }),
+    terminosId: z.string().uuid("Recargue la página para ver los términos vigentes"),
+    privacidadId: z.string().uuid("Recargue la página para ver la política vigente"),
+    captchaToken: z.string().max(4096).optional(),
   })
   .refine((d) => d.password === d.confirmPassword, {
     message: "Las contraseñas no coinciden",
@@ -309,3 +317,23 @@ export const CAUSA_DENUNCIA_ETIQUETA: Record<string, string> = {
   PROVEN_MENTAL_INCAPACITY: "Incapacidad mental comprobada",
   OTHER: "Otro",
 };
+
+// ---------------------------------------------------------------- documentos legales
+
+/** Versión vigente de los Términos y Condiciones o de la Política de Privacidad. */
+export interface DocumentoLegal {
+  readonly id: string;
+  readonly kind: "TERMINOS" | "PRIVACIDAD";
+  readonly version: number;
+  readonly title: string;
+  /** Texto en Markdown. */
+  readonly content: string;
+  readonly changeSummary: string | null;
+  readonly publishedAt: string;
+  readonly updatedAt: string;
+}
+
+export interface DocumentosVigentes {
+  readonly terminos: DocumentoLegal | null;
+  readonly privacidad: DocumentoLegal | null;
+}

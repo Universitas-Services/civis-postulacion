@@ -12,6 +12,9 @@ function configuredOrigin(value: string | undefined): string | undefined {
 const apiOrigin = configuredOrigin(process.env.NEXT_PUBLIC_API_URL);
 const documentOrigin = configuredOrigin(process.env.NEXT_PUBLIC_DOCUMENT_ORIGIN);
 
+/** Captcha del registro y el ingreso (Cloudflare Turnstile): script e iframe. */
+const TURNSTILE = "https://challenges.cloudflare.com";
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -35,12 +38,14 @@ const nextConfig: NextConfig = {
           // React DevTools / reconstrucción de callstacks usan eval() en
           // desarrollo. En producción React no lo usa: no abrir el agujero.
           process.env.NODE_ENV === "production"
-            ? "script-src 'self' 'unsafe-inline'"
-            : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-          ["connect-src 'self'", apiOrigin].filter(Boolean).join(" "),
+            ? `script-src 'self' 'unsafe-inline' ${TURNSTILE}`
+            : `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${TURNSTILE}`,
+          ["connect-src 'self'", apiOrigin, TURNSTILE].filter(Boolean).join(" "),
           // PDF en iframe (frame-src blob:). Imagen en <img> (img-src blob:).
           // Los bytes salen del proxy del panel, no del almacén.
-          ["frame-src 'self' blob:", apiOrigin, documentOrigin].filter(Boolean).join(" "),
+          ["frame-src 'self' blob:", apiOrigin, documentOrigin, TURNSTILE]
+            .filter(Boolean)
+            .join(" "),
         ].join("; "),
       },
       { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },

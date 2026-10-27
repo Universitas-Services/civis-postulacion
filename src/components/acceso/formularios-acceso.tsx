@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
+import type { DocumentoLegal } from "@/contracts";
 import {
+  aceptarDocumentos,
   iniciarSesion,
   pedirCodigoRecuperacion,
   reenviarCodigo,
@@ -20,6 +22,8 @@ import {
   CampoContrasena,
   CLASE_CAMPO,
 } from "@/components/formulario/campos";
+import { CasillasAceptacion } from "@/components/legal/casillas-aceptacion";
+import { Captcha } from "./captcha";
 
 export function FormularioIngreso() {
   const [estado, accion] = useActionState<EstadoFormulario, FormData>(iniciarSesion, {});
@@ -46,6 +50,7 @@ export function FormularioIngreso() {
           ¿Olvidó su contraseña?
         </Link>
       </p>
+      <Captcha reinicio={estado} />
       <BotonEnviar enCurso="Ingresando…">Ingresar</BotonEnviar>
       <p className="text-center text-sm text-toga-600">
         ¿Aún no tiene cuenta?{" "}
@@ -57,7 +62,13 @@ export function FormularioIngreso() {
   );
 }
 
-export function FormularioRegistro() {
+export function FormularioRegistro({
+  terminos,
+  privacidad,
+}: {
+  readonly terminos: DocumentoLegal;
+  readonly privacidad: DocumentoLegal;
+}) {
   const [estado, accion] = useActionState<EstadoFormulario, FormData>(registrarCuenta, {});
   const c = estado.campos ?? {};
   return (
@@ -109,6 +120,19 @@ export function FormularioRegistro() {
         autoComplete="new-password"
         error={c.confirmPassword}
       />
+      <CasillasAceptacion
+        terminos={terminos}
+        privacidad={privacidad}
+        errores={{
+          aceptaTerminos: c.aceptaTerminos ?? c.terminosId,
+          aceptaPrivacidad: c.aceptaPrivacidad ?? c.privacidadId,
+        }}
+        marcadas={{
+          terminos: estado.valores?.aceptaTerminos === "on",
+          privacidad: estado.valores?.aceptaPrivacidad === "on",
+        }}
+      />
+      <Captcha reinicio={estado} />
       <BotonEnviar enCurso="Creando la cuenta…">Crear cuenta</BotonEnviar>
       <p className="text-center text-sm text-toga-600">
         ¿Ya tiene cuenta?{" "}
@@ -272,6 +296,45 @@ export function FormularioRestablecer() {
           {reenviando ? "Enviando…" : "Enviar otro código"}
         </button>
       </p>
+    </form>
+  );
+}
+
+/**
+ * Aceptación de versiones nuevas de los términos o la política. Sólo muestra
+ * las que la cuenta todavía no aceptó, con el resumen de cambios.
+ */
+export function FormularioAceptacion({
+  pendientes,
+}: {
+  readonly pendientes: readonly DocumentoLegal[];
+}) {
+  const [estado, accion] = useActionState<EstadoFormulario, FormData>(aceptarDocumentos, {});
+  const terminos = pendientes.find((d) => d.kind === "TERMINOS") ?? null;
+  const privacidad = pendientes.find((d) => d.kind === "PRIVACIDAD") ?? null;
+  return (
+    <form action={accion} className="space-y-5" noValidate>
+      <AvisoError mensaje={estado.error} />
+      <ul className="space-y-3">
+        {pendientes.map((d) => (
+          <li key={d.id} className="rounded-md border border-toga-200 bg-white p-4">
+            <p className="font-semibold text-toga-900">
+              {d.title} · versión <span className="cifra">{d.version}</span>
+            </p>
+            {d.changeSummary && (
+              <p className="mt-1 whitespace-pre-wrap text-sm text-toga-700">
+                <span className="font-medium">Qué cambió:</span> {d.changeSummary}
+              </p>
+            )}
+          </li>
+        ))}
+      </ul>
+      <CasillasAceptacion
+        terminos={terminos}
+        privacidad={privacidad}
+        errores={estado.campos ?? {}}
+      />
+      <BotonEnviar enCurso="Guardando…">Aceptar y continuar</BotonEnviar>
     </form>
   );
 }

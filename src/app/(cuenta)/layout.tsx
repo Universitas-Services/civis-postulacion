@@ -7,6 +7,7 @@ import { ToastProvider } from "@/components/toast-provider";
 import { GuardiaHistorial } from "@/components/guardia-historial";
 import { terminarSesion } from "@/app/acciones-cuenta";
 import { usuarioActual } from "@/lib/sesion";
+import { llamarApi } from "@/lib/api";
 
 const SECCIONES = [
   { href: "/postulacion", texto: "Mi postulación" },
@@ -18,6 +19,14 @@ export default async function LayoutCuenta({ children }: { readonly children: Re
   const usuario = await usuarioActual();
   if (!usuario) redirect("/login");
   const ruta = (await headers()).get("x-pathname") ?? "";
+
+  // Versión nueva de los términos o la política: hay que aceptarla antes de
+  // seguir. Las objeciones quedan fuera para no estorbar un descargo con
+  // plazo. Si la consulta falla, se sigue: la API exige igual la aceptación.
+  if (!ruta.startsWith("/aceptar-documentos") && !ruta.startsWith("/objeciones")) {
+    const pendientes = await llamarApi<unknown[]>("/applicant/legal/pendientes").catch(() => []);
+    if (pendientes.length > 0) redirect("/aceptar-documentos");
+  }
 
   return (
     <ToastProvider>

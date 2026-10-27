@@ -1,6 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import { API_INTERNA, COOKIE_SESION } from "./config";
+import { cabecerasCliente } from "./cliente";
 import { renovarSesionTras401 } from "./auth-refresh";
 import { cerrarSesion, cifrarSesion, guardarSesion, leerSesion, OPCIONES_COOKIE } from "./sesion";
 
@@ -69,6 +70,7 @@ async function ejecutarLlamada<T>(
   const respuesta = await fetch(`${API_INTERNA}${ruta}`, {
     method: opciones.method ?? "GET",
     headers: {
+      ...(await cabecerasCliente()),
       Accept: "application/json",
       ...(opciones.body ? { "Content-Type": "application/json" } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),

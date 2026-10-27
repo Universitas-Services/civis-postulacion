@@ -13,6 +13,10 @@ const registro = {
   email: "Lucia@Correo.test",
   password: "ClaveSegura123",
   confirmPassword: "ClaveSegura123",
+  aceptaTerminos: true,
+  aceptaPrivacidad: true,
+  terminosId: "00000000-0000-4000-8000-000000000001",
+  privacidadId: "00000000-0000-4000-8000-000000000002",
 };
 
 describe("registro de cuenta", () => {
@@ -20,6 +24,15 @@ describe("registro de cuenta", () => {
     const r = registroCuentaSchema.safeParse(registro);
     expect(r.success).toBe(true);
     expect(r.data?.email).toBe("lucia@correo.test");
+  });
+
+  it("sin marcar una de las dos casillas no hay registro", () => {
+    expect(registroCuentaSchema.safeParse({ ...registro, aceptaTerminos: false }).success).toBe(
+      false,
+    );
+    expect(registroCuentaSchema.safeParse({ ...registro, aceptaPrivacidad: false }).success).toBe(
+      false,
+    );
   });
 
   it("exige una clave fuerte y que coincida", () => {
