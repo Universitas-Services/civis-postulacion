@@ -6,7 +6,7 @@ import { RedNodos } from "@/components/marca/red-nodos";
 const PASOS = [
   {
     titulo: "Cree su cuenta",
-    detalle: "Nombre, correo y una contraseña. Confirmará el correo con un código.",
+    detalle: "Nombres y apellidos, correo y una contraseña. Confirmará el correo con un código.",
   },
   {
     titulo: "Registre su postulación",

@@ -75,7 +75,7 @@ export function PasoDatosPostulante({
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="nombre_postulante" className="block text-xs font-medium text-toga-600">
-              Nombre del postulante <span className="text-balanza-700">*</span>
+              Nombres del postulante <span className="text-balanza-700">*</span>
             </label>
             <input
               id="nombre_postulante"
@@ -95,7 +95,7 @@ export function PasoDatosPostulante({
               htmlFor="apellido_postulante"
               className="block text-xs font-medium text-toga-600"
             >
-              Apellido del postulante <span className="text-balanza-700">*</span>
+              Apellidos del postulante <span className="text-balanza-700">*</span>
             </label>
             <input
               id="apellido_postulante"

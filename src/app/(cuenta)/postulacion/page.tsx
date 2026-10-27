@@ -36,6 +36,25 @@ export default async function MiPostulacion() {
 
   if (!estado) {
     const [nombre = "", ...resto] = usuario.fullName.split(" ");
+    const portal = await llamarApi<{ applicationsClosed?: boolean }>("/public/portal").catch(
+      () => null,
+    );
+    if (portal?.applicationsClosed) {
+      return (
+        <div className="mx-auto max-w-3xl">
+          <h1 className="font-institucional text-3xl text-toga-900">Bienvenido, {nombre}</h1>
+          <div className="mt-6 rounded-lg border border-toga-200 bg-white p-5 sm:p-6">
+            <p className="text-base font-semibold text-toga-900">
+              El periodo de postulaciones está cerrado
+            </p>
+            <p className="mt-2 text-base leading-relaxed text-toga-600">
+              Ya no se reciben postulaciones nuevas. Si cree que se trata de un error, comuníquese
+              con la secretaría del proceso.
+            </p>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="mx-auto max-w-3xl">
         <h1 className="font-institucional text-3xl text-toga-900">Bienvenido, {nombre}</h1>
@@ -90,11 +109,10 @@ export default async function MiPostulacion() {
           <p className="text-base text-toga-900">
             <span className="font-semibold">
               {estado.objecionesSinDescargo === 1
-                ? "Recibió una objeción."
-                : `Recibió ${estado.objecionesSinDescargo} objeciones.`}
+                ? "El comité admitió una objeción contra su postulación."
+                : `El comité admitió ${estado.objecionesSinDescargo} objeciones contra su postulación.`}
             </span>{" "}
-            Puede presentar su descargo antes de que el comité{" "}
-            {estado.objecionesSinDescargo === 1 ? "la envíe" : "las envíe"} al Consejo.
+            Tiene un plazo de pocos días para presentar su descargo: revíselo ahora.
           </p>
           <Link
             href="/objeciones"
@@ -122,6 +140,18 @@ export default async function MiPostulacion() {
             Devuelto el {fecha(estado.devolucion.fecha)}. Haga los cambios abajo y vuelva a
             enviarlo. La secretaría también puede ayudarle con las correcciones.
           </p>
+        </div>
+      )}
+
+      {estado.puedeEditar && estado.postulacionesCerradas && !estado.devolucion && (
+        <div
+          role="status"
+          className="rounded-lg border border-toga-200 bg-white px-5 py-4 text-base text-toga-700"
+        >
+          <span className="font-semibold text-toga-900">
+            El periodo de postulaciones está cerrado.
+          </span>{" "}
+          Su expediente no llegó a enviarse a revisión y ya no puede enviarse.
         </div>
       )}
 

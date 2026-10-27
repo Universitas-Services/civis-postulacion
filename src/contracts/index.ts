@@ -176,7 +176,10 @@ export interface EstadoPostulacion {
   /** Presente cuando la revisión lo devolvió y aún no lo reenvía. */
   readonly devolucion: { readonly motivo: string | null; readonly fecha: string } | null;
   readonly puedeEditar: boolean;
+  /** Objeciones admitidas cuyo plazo de descargo corre. */
   readonly objecionesSinDescargo: number;
+  /** Cerrado el periodo: no hay primer envío (un expediente devuelto sí se reenvía). */
+  readonly postulacionesCerradas: boolean;
   readonly documentos: readonly {
     readonly id: string;
     readonly category: string;
@@ -210,9 +213,49 @@ export interface ObjecionRecibida {
   readonly description: string;
   readonly evidenceUrl: string;
   readonly receivedAt: string;
-  /** Cuando el comité la envió al Consejo. Desde ahí ya no admite descargo. */
+  /** Cuando el comité la declaró con lugar y pasó al Consejo. */
   readonly forwardedAt: string | null;
+  readonly stage: EtapaObjecion;
+  /** Notificación de la admisión: desde ahí corre el plazo de descargo. */
+  readonly notifiedAt: string | null;
+  readonly descargoDueAt: string | null;
+  readonly noDescargoAt: string | null;
+  readonly finalDecidedAt: string | null;
   readonly descargo: Descargo | null;
+  /** Autos del comité notificados al postulante (admisión y decisión). */
+  readonly autos: readonly AutoObjecion[];
+}
+
+/** Etapas que ve el postulante: desde que la objeción se admite. */
+export type EtapaObjecion =
+  "EN_DESCARGO" | "DESCARGO_PRESENTADO" | "SIN_DESCARGO" | "CON_LUGAR" | "SIN_LUGAR";
+
+export type TipoAuto = "ADMISION" | "CON_LUGAR" | "SIN_LUGAR";
+
+export const AUTO_ETIQUETA: Record<TipoAuto, string> = {
+  ADMISION: "Auto de admisión",
+  CON_LUGAR: "Auto de decisión: con lugar",
+  SIN_LUGAR: "Auto de decisión: sin lugar",
+};
+
+export interface AutoObjecion {
+  readonly id: string;
+  readonly kind: TipoAuto;
+  readonly number: string;
+  readonly createdAt: string;
+}
+
+/** El plazo de descargo sigue abierto. */
+export function admiteDescargo(
+  o: Pick<ObjecionRecibida, "stage" | "descargoDueAt" | "descargo">,
+  ahora: Date = new Date(),
+): boolean {
+  return (
+    o.stage === "EN_DESCARGO" &&
+    o.descargo === null &&
+    o.descargoDueAt !== null &&
+    new Date(o.descargoDueAt).getTime() > ahora.getTime()
+  );
 }
 
 /** Espejo de civis-api `descargoSchema`. */

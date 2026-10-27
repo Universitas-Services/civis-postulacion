@@ -71,7 +71,7 @@ export function FormularioRegistro() {
       <div className="grid gap-4 sm:grid-cols-2">
         <Campo
           nombre="firstName"
-          etiqueta="Nombre"
+          etiqueta="Nombres"
           autoComplete="given-name"
           required
           defaultValue={estado.valores?.firstName}
@@ -79,7 +79,7 @@ export function FormularioRegistro() {
         />
         <Campo
           nombre="lastName"
-          etiqueta="Apellido"
+          etiqueta="Apellidos"
           autoComplete="family-name"
           required
           defaultValue={estado.valores?.lastName}

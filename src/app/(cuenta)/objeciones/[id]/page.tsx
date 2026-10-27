@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import type { ObjecionRecibida } from "@/contracts";
-import { causalesDe } from "@/contracts";
+import { AUTO_ETIQUETA, admiteDescargo, causalesDe } from "@/contracts";
 import { ErrorApi, llamarApi, NoAutorizado } from "@/lib/api";
 import { exigirRol, renovarYVolver } from "@/lib/rutas";
 import { situacionDe } from "@/components/objeciones/situacion";
@@ -12,13 +12,35 @@ import { FormularioDescargo } from "@/components/objeciones/formulario-descargo"
 
 export const metadata: Metadata = { title: "Objeción" };
 
+const ZONA = "America/Caracas";
+
 const fecha = (iso: string) =>
   new Date(iso).toLocaleDateString("es-VE", {
     day: "numeric",
     month: "long",
     year: "numeric",
-    timeZone: "America/Caracas",
+    timeZone: ZONA,
   });
+
+const fechaHora = (iso: string) =>
+  new Date(iso).toLocaleString("es-VE", {
+    day: "numeric",
+    month: "long",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: ZONA,
+  });
+
+/** «Quedan 2 días» o «Quedan 5 horas». */
+function restante(iso: string): string {
+  const horas = (new Date(iso).getTime() - Date.now()) / 3_600_000;
+  if (horas < 24) {
+    const h = Math.max(1, Math.floor(horas));
+    return `Quedan ${h} ${h === 1 ? "hora" : "horas"}`;
+  }
+  const d = Math.floor(horas / 24);
+  return `Quedan ${d} ${d === 1 ? "día" : "días"}`;
+}
 
 export default async function DetalleObjecion({
   params,
@@ -41,6 +63,8 @@ export default async function DetalleObjecion({
 
   const s = situacionDe(o);
   const causales = causalesDe(o);
+  const abierto = admiteDescargo(o);
+  const decidida = o.stage === "CON_LUGAR" || o.stage === "SIN_LUGAR";
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -60,7 +84,8 @@ export default async function DetalleObjecion({
             {s.texto}
           </span>
           <span className="text-xs text-toga-500">
-            <span className="codigo">{o.trackingCode}</span> · recibida el {fecha(o.receivedAt)}
+            <span className="codigo">{o.trackingCode}</span>
+            {o.notifiedAt && <> · notificada el {fecha(o.notifiedAt)}</>}
           </span>
         </div>
         <h1 className="font-institucional mt-3 text-2xl text-toga-900">{causales.join(" · ")}</h1>
@@ -85,6 +110,52 @@ export default async function DetalleObjecion({
         </p>
       </section>
 
+      {decidida && (
+        <section className="rounded-lg border border-toga-200 bg-white px-5 py-5">
+          <p className="text-base font-semibold text-toga-900">
+            {o.stage === "CON_LUGAR"
+              ? "Objeción declarada con lugar"
+              : "Objeción declarada sin lugar"}
+          </p>
+          <p className="mt-1 text-sm text-toga-600">
+            {o.stage === "CON_LUGAR"
+              ? "El comité remitió el asunto al Consejo de evaluadores, que determinará su elegibilidad o el ajuste de su puntaje."
+              : "El comité desestimó la objeción y ratificó su elegibilidad. Su postulación continúa en el proceso."}
+            {o.finalDecidedAt && <> Decisión del {fecha(o.finalDecidedAt)}.</>}
+          </p>
+        </section>
+      )}
+
+      {o.autos.length > 0 && (
+        <section aria-labelledby="autos">
+          <h2 id="autos" className="text-base font-semibold text-toga-900">
+            Autos del comité
+          </h2>
+          <ul className="mt-3 space-y-2">
+            {o.autos.map((a) => (
+              <li key={a.id}>
+                <a
+                  href={`/api/objeciones/${o.id}/autos/${a.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-3 rounded-lg border border-toga-200 bg-white px-4 py-3 hover:border-toga-300"
+                >
+                  <FileText className="h-5 w-5 shrink-0 text-toga-400" aria-hidden="true" />
+                  <span className="min-w-0">
+                    <span className="block font-medium text-toga-900 group-hover:text-balanza-700">
+                      {AUTO_ETIQUETA[a.kind]}
+                    </span>
+                    <span className="block text-xs text-toga-500">
+                      <span className="codigo">{a.number}</span> · {fecha(a.createdAt)} · PDF
+                    </span>
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {o.descargo ? (
         <section aria-labelledby="su-descargo">
           <h2 id="su-descargo" className="text-base font-semibold text-toga-900">
@@ -93,22 +164,28 @@ export default async function DetalleObjecion({
           <div className="mt-3">
             <VistaDescargo objectionId={o.id} descargo={o.descargo} />
           </div>
-          {o.forwardedAt && (
-            <p className="mt-3 text-sm text-toga-600">
-              El comité envió la objeción y su descargo al Consejo el {fecha(o.forwardedAt)}.
-            </p>
-          )}
         </section>
-      ) : o.forwardedAt ? (
-        <section className="rounded-lg border border-toga-200 bg-white px-5 py-5">
-          <p className="text-base font-semibold text-toga-900">Ya no admite descargo</p>
-          <p className="mt-1 text-sm text-toga-600">
-            El comité envió esta objeción al Consejo el {fecha(o.forwardedAt)} sin descargo. Si
-            necesita aportar algo, comuníquese con la secretaría.
+      ) : abierto && o.descargoDueAt ? (
+        <section aria-labelledby="plazo" className="space-y-3">
+          <p
+            id="plazo"
+            className="rounded-lg border border-balanza-600/25 bg-balanza-50 px-4 py-3 text-sm text-balanza-700"
+          >
+            <span className="font-semibold">{restante(o.descargoDueAt)}.</span> Puede presentar su
+            descargo hasta el {fechaHora(o.descargoDueAt)} (hora de Caracas).
           </p>
+          <FormularioDescargo objectionId={o.id} trackingCode={o.trackingCode} />
         </section>
       ) : (
-        <FormularioDescargo objectionId={o.id} trackingCode={o.trackingCode} />
+        <section className="rounded-lg border border-toga-200 bg-white px-5 py-5">
+          <p className="text-base font-semibold text-toga-900">No presentó descargo</p>
+          <p className="mt-1 text-sm text-toga-600">
+            {o.descargoDueAt && <>El plazo venció el {fechaHora(o.descargoDueAt)}. </>}
+            {decidida
+              ? "El comité decidió con los elementos que constaban en el expediente."
+              : "El comité decidirá con los elementos que constan en el expediente."}
+          </p>
+        </section>
       )}
     </div>
   );
