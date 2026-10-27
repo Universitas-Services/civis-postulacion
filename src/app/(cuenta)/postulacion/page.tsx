@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { FileText } from "lucide-react";
 import type { EstadoPostulacion } from "@/contracts";
 import { CATEGORIA_ETIQUETA } from "@/contracts";
 import { ErrorApi, llamarApi, NoAutorizado } from "@/lib/api";
 import { exigirRol, renovarYVolver } from "@/lib/rutas";
+import { hayDocumentosPendientes } from "@/lib/legal";
 import { FormularioPostulacion } from "@/components/postulacion/formulario-postulacion";
 import { CargaPostulacion } from "@/components/postulacion/carga-postulacion";
 import { EtapasProceso } from "@/components/postulacion/etapas-proceso";
@@ -25,6 +27,10 @@ const telefonoLegible = (t: string) => (/^\d{11}$/.test(t) ? `${t.slice(0, 4)} $
 
 export default async function MiPostulacion() {
   const usuario = await exigirRol("APPLICANT");
+  // Versión nueva de los términos o la política: hay que aceptarla antes de
+  // seguir. Va en la página y no en el layout: un redirect() en el layout deja
+  // la pantalla en blanco en la navegación del cliente.
+  if (await hayDocumentosPendientes()) redirect("/aceptar-documentos");
 
   let estado: EstadoPostulacion | null = null;
   try {

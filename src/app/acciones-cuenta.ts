@@ -14,6 +14,7 @@ import { cabecerasAuthCookie, extraerRefreshCookie } from "@/lib/auth-refresh";
 import { accessExpiresAtDesde } from "@/lib/ttl-access";
 import { cerrarSesion, guardarSesion, leerSesion } from "@/lib/sesion";
 import { cabecerasCliente } from "@/lib/cliente";
+import { hayPendientesCon } from "@/lib/legal";
 import { ErrorApi, llamarApiAccion, NoAutorizado } from "@/lib/api";
 
 export interface EstadoFormulario {
@@ -167,8 +168,13 @@ export async function iniciarSesion(
     refreshCookie,
     accessExpiresAt: accessExpiresAtDesde(datos.expiresIn),
   });
+  // Si hay una versión nueva de los términos o la política, se va directo a
+  // aceptarla: sin redirecciones encadenadas, que dejan la pantalla en blanco.
+  const destino = (await hayPendientesCon(datos.accessToken))
+    ? "/aceptar-documentos"
+    : "/postulacion";
   // `replace`: el ingreso no queda en el historial; «atrás» no vuelve al login.
-  redirect("/postulacion", RedirectType.replace);
+  redirect(destino, RedirectType.replace);
 }
 
 export async function terminarSesion(): Promise<void> {
